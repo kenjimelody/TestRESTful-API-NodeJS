@@ -7,23 +7,23 @@ This is a testing project for first time with Node.js
 ### Express application generator  
 **Ref:** http://expressjs.com/en/starter/generator.html  
 
-1. Install express generator
+***Install express generator***
 ```sh
 $ npm install express-generator -g  
 ```
-2. Generate myapp
+***Generate myapp***
 ```sh
 $ express myapp  
 ```
-3. Enter myapp directory
+***Enter myapp directory***
 ```sh
 $ cd myapp  
 ```
-4. Install npm
+***Install npm***
 ```sh
 $ npm install  
 ```
-5. Start Service
+***Start Service***
 ```sh
 $ DEBUG=myapp:* npm start  
 ```
