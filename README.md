@@ -63,7 +63,7 @@ $ brew install memcached
 
 ### Run Memcached  
 ```sh
-$ memcached -p 11211  
+$ memcached -d -p 11211  
 ```
 
 ### Install Memcached Module
