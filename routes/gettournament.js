@@ -4,22 +4,37 @@ var utils = require('../utils/index');
 
 var router = express.Router();
 var redis_connection;
+var memcached;
+
+function setData2Redis( key, value ) {
+
+	redis_connection.set( key, value);
+	redis_connection.expire( key, 30 );
+	redis_connection.end(true);
+}
+
+function setData2Memcached( key, value ) {
+
+	memcached.set( key, value, 60, function(err) {
+
+		console.log(err);
+	});
+	memcached.end();
+}
 
 function getDataFromRedis(req, res, id) {
+
+	var key = "";
+	if (id == null) {
+		key = "tournament/all";
+	} else {
+		key = "tournament/" + id;
+	}
 
 	redis_connection = config.getRedisConnection();
 	redis_connection.on('connect', function() {
     	
     	console.log('Redis connected');
-
-    	//SET
-    	var key = "";
-    	if (id == null) {
-    		key = "tournament/all";
-    	} else {
-    		key = "tournament/" + id;
-    	}
-
     	redis_connection.exists(key, function(err, reply) {
 
 			if (err) {
@@ -36,8 +51,9 @@ function getDataFromRedis(req, res, id) {
     			});
 
 			} else {
-				console.log( "Get from MySQL." );
-				selectforlist(req, res, id, true);
+				console.log( "Get from Memcached." );
+				getDataFromMemcached( req, res, id, key );
+				//selectforlist(req, res, id, key, true);
 			}
 		})
 	});
@@ -45,17 +61,47 @@ function getDataFromRedis(req, res, id) {
 
 	redis_connection.on("error", function (err) {
     	
-    	console.log("Error " + err);
-    	redis_connection.end(true);
-    	
-    	var obj = selectforlist(req, res, id, false);
-    	if( obj != null ) {
-			utils.printJSON(res, obj);
+    	//console.log("Error " + err);
+    	console.log( "Get from Memcached." );
+    	getDataFromMemcached(req, res, id, key);
+	});
+}
+
+function getDataFromMemcached(req, res, id, key) {
+
+	memcached = config.getMemcached();
+
+	memcached.get( key, function( err, data ) {
+
+		if( !err ) {
+
+			if(data == undefined) {
+
+				console.log( "Get from MySQL." );
+				selectforlist(req, res, id, key, true);
+
+			} else {
+
+				setData2Redis( key, data );
+				memcached.end();
+
+				utils.print(res, data);
+			}
+
+		} else {
+			console.log("Error " + err);
+			redis_connection.end(true);
+			memcached.end();
+
+			var obj = selectforlist(req, res, id, key, false);
+	    	if( obj != null ) {
+				utils.printJSON(res, obj);
+			}
 		}
 	});
 }
 
-function selectforlist(req, res, id, cache) {
+function selectforlist(req, res, id, key, cache) {
 
 	var query = "";
 	var tournament_id = "";
@@ -92,17 +138,9 @@ function selectforlist(req, res, id, cache) {
 			var jsonStr = JSON.stringify(jsonObj);
 
 			if ( cache ) {
-
 				//SET
-				if( id == null ) {
-					redis_connection.set( "tournament/all", jsonStr);
-					redis_connection.expire( "tournament/all", 30 );
-				} else {
-					redis_connection.set( "tournament/" + id, jsonStr);
-					redis_connection.expire( "tournament/" + id, 30 );
-				}
-
-    			redis_connection.end(true);
+				setData2Redis( key, jsonStr );
+				setData2Memcached( key, jsonStr );
 			}
 
 			utils.printJSON(res, jsonObj);

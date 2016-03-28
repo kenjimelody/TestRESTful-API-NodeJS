@@ -55,8 +55,19 @@ $ src/redis-server
 $ npm install redis  
 ```
 
-### Install Cache Module
-**Ref:** https://www.npmjs.com/package/node-cache
+### Install Memcached Server  
+***Ref:** http://www.hacksparrow.com/install-memcached-on-mac-os-x.html  
 ```sh
-$ npm install node-cache
+$ brew install memcached  
+```
+
+### Run Memcached  
+```sh
+$ memcached -p 11211  
+```
+
+### Install Memcached Module
+**Ref:** https://www.npmjs.com/package/memcached
+```sh
+$ npm install memcached
 ```
